@@ -135,7 +135,7 @@ function showOverview(id) {
       <h1>${esc(tx(w.name))}</h1>
       <p class="meta">
         ${esc(tx(DATA.categories?.[w.category]) || w.category)} · ${plan.length} ${esc(t('exercises'))}
-        ${w.credit ? `<br>${esc(t('credit'))} ${esc(w.credit)}` : ''}
+        ${w.credit ? `<br>${esc(t('credit'))} ${w.source ? `<a href="${esc(w.source)}" target="_blank" rel="noopener">${esc(w.credit)} ↗</a>` : esc(w.credit)}` : ''}
         ${w.author ? ` · ${esc(t('by'))} ${esc(w.author)}` : ''}
       </p>
 

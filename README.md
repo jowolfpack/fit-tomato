@@ -35,6 +35,7 @@ Everything lives in `workouts.json`, which has three parts:
      "category": "core",
      "author": "who transcribed it",
      "credit": "who made the original video",
+     "source": "link to the original video (optional)",
      "steps": [
        { "exercise": "hip-lift", "duration": 30 },
        { "exercise": "rest", "duration": 15 }
