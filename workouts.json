@@ -1,0 +1,164 @@
+{
+  "categories": {
+    "core": { "en": "Core", "de": "Rumpf" }
+  },
+
+  "exercises": {
+    "roll-knees-left": {
+      "name": { "en": "Roll Knees to Left Shoulder", "de": "Knie zur linken Schulter rollen" },
+      "description": { "en": "Lying on the ground.", "de": "Auf dem Boden liegend." },
+      "media": "media/roll-knees-left.webp"
+    },
+    "roll-knees-mid": {
+      "name": { "en": "Roll Knees to the Middle", "de": "Knie zur Mitte rollen" },
+      "description": { "en": "Knees to chin.", "de": "Knie zum Kinn." },
+      "media": "media/roll-knees-mid.webp"
+    },
+    "roll-knees-right": {
+      "name": { "en": "Roll Knees to Right Shoulder", "de": "Knie zur rechten Schulter rollen" },
+      "description": { "en": "Lying on the ground.", "de": "Auf dem Boden liegend." },
+      "media": "media/roll-knees-right.webp"
+    },
+    "hip-lift": {
+      "name": { "en": "Hip Lift", "de": "Hüftheben" },
+      "description": { "en": "Feet in the air (candle). Hold at the top for 1 sec.", "de": "Füße in die Luft (Kerze). Oben 1 Sek. halten." },
+      "media": "media/hip-lift.webp"
+    },
+    "heel-touch-air": {
+      "name": { "en": "Heel Touch Air", "de": "Fersen berühren (Luft)" },
+      "description": { "en": "Touch your heels and hold for 2 sec.", "de": "Fersen berühren und 2 Sek. halten." },
+      "media": "media/heel-touch-air.webp"
+    },
+    "boxing-crunches": {
+      "name": { "en": "Boxing Crunches", "de": "Box-Crunches" },
+      "description": { "en": "Explosive. Punch twice in the up position.", "de": "Explosiv. Oben zweimal boxen." },
+      "media": "media/boxing-crunches.webp"
+    },
+    "scissors": {
+      "name": { "en": "Scissors", "de": "Schere" },
+      "description": { "en": "Stretch out on the ground, then touch your toes with your fingers while stretched.", "de": "Auf dem Boden ausstrecken, dann gestreckt mit den Fingern die Zehen berühren." },
+      "media": "media/scissors.webp"
+    },
+    "plank-pulses-left": {
+      "name": { "en": "Plank Pulses Left", "de": "Plank-Pulse links" },
+      "description": { "en": "Up and down. Arm stretched or bent on your forearm.", "de": "Hoch und runter. Arm gestreckt oder auf dem Unterarm." },
+      "media": "media/plank-pulses-left.webp"
+    },
+    "plank-hold-left": {
+      "name": { "en": "Plank Hold Left", "de": "Plank halten links" },
+      "description": { "en": "Hold the position.", "de": "Position halten." },
+      "media": "media/plank-hold-left.webp"
+    },
+    "plank-pulses-right": {
+      "name": { "en": "Plank Pulses Right", "de": "Plank-Pulse rechts" },
+      "description": { "en": "Up and down.", "de": "Hoch und runter." },
+      "media": "media/plank-pulses-right.webp"
+    },
+    "plank-hold-right": {
+      "name": { "en": "Plank Hold Right", "de": "Plank halten rechts" },
+      "description": { "en": "Hold the position.", "de": "Position halten." },
+      "media": "media/plank-hold-right.webp"
+    },
+    "crunch-glute-bridge": {
+      "name": { "en": "Crunch + Glute Bridge", "de": "Crunch + Glute Bridge" },
+      "description": { "en": "Touch your heels with your fingers, then push your hips up and squeeze your glutes.", "de": "Mit den Fingern die Fersen berühren, dann Hüfte hoch und Po anspannen." },
+      "media": "media/crunch-glute-bridge.webp"
+    },
+    "toe-touches": {
+      "name": { "en": "Toe Touches", "de": "Zehen berühren" },
+      "description": { "en": "Soles of the feet together. Touch your toes, hold 2 sec. Arms stay straight.", "de": "Fußsohlen aneinander. Zehen berühren, 2 Sek. halten. Arme bleiben gestreckt." },
+      "media": "media/toe-touches.webp"
+    },
+    "toe-reachers": {
+      "name": { "en": "Toe Reachers", "de": "Zehen erreichen" },
+      "description": { "en": "Legs straight. Try to touch your toes, hold for 5 sec.", "de": "Beine gestreckt. Versuche die Zehen zu berühren, 5 Sek. halten." },
+      "media": "media/toe-reachers.webp"
+    },
+    "toe-touch-sit": {
+      "name": { "en": "Toe Touch Sit", "de": "Zehen-Sitz" },
+      "description": { "en": "Soles together, fingers on your toes. Lean back to where it is hardest and stay.", "de": "Fußsohlen aneinander, Finger an den Zehen. Nach hinten lehnen, wo es am schwersten ist, und halten." },
+      "media": "media/toe-touch-sit.webp"
+    },
+    "mountain-climbers-cross-fast": {
+      "name": { "en": "Alternating Mountain Climbers (fast)", "de": "Kreuz-Bergsteiger (schnell)" },
+      "description": { "en": "Left knee to right elbow and vice versa. Fast.", "de": "Linkes Knie zum rechten Ellbogen und umgekehrt. Schnell." },
+      "media": "media/mountain-climbers-cross-fast.webp"
+    },
+    "mountain-climbers-cross-slow": {
+      "name": { "en": "Alternating Mountain Climbers (slow)", "de": "Kreuz-Bergsteiger (langsam)" },
+      "description": { "en": "Very slow, full tension.", "de": "Sehr langsam, volle Spannung." },
+      "media": "media/mountain-climbers-cross-slow.webp"
+    },
+    "shin-claps": {
+      "name": { "en": "Shin Claps", "de": "Schienbein-Klatscher" },
+      "description": { "en": "Lie on your back. Clap your hands over your shins.", "de": "Auf dem Rücken liegen. Über den Schienbeinen in die Hände klatschen." },
+      "media": "media/shin-claps.webp"
+    },
+    "heel-touches-ground": {
+      "name": { "en": "Heel Touches Ground", "de": "Fersen berühren (Boden)" },
+      "description": { "en": "Heels on the ground, feet flexed. Left hand to left heel, then right hand to right heel. The further away the heels, the harder.", "de": "Fersen auf dem Boden, Füße angewinkelt. Linke Hand zur linken Ferse, dann rechte Hand zur rechten Ferse. Je weiter weg die Fersen, desto schwerer." },
+      "media": "media/heel-touches-ground.webp"
+    },
+    "hold-45": {
+      "name": { "en": "45° Hold", "de": "45°-Halten" },
+      "description": { "en": "Arms and legs parallel. Hold the position.", "de": "Arme und Beine parallel. Position halten." },
+      "media": "media/hold-45.webp"
+    },
+    "mountain-climbers-fast": {
+      "name": { "en": "Mountain Climbers (fast)", "de": "Bergsteiger (schnell)" },
+      "description": { "en": "Knees to the chest. Fast.", "de": "Knie zur Brust. Schnell." },
+      "media": "media/mountain-climbers-fast.webp"
+    },
+    "mountain-climbers-slow": {
+      "name": { "en": "Mountain Climbers (slow)", "de": "Bergsteiger (langsam)" },
+      "description": { "en": "Knees to the chest. Slow.", "de": "Knie zur Brust. Langsam." },
+      "media": "media/mountain-climbers-slow.webp"
+    },
+    "belly-breathing": {
+      "name": { "en": "Cool Down – Belly Breathing", "de": "Cool-down – Bauchatmung" },
+      "description": { "en": "Lie on your belly, arms stretched. Breathe into your belly.", "de": "Auf dem Bauch liegen, Arme gestreckt. In den Bauch atmen." },
+      "media": "media/belly-breathing.webp"
+    },
+    "childs-pose": {
+      "name": { "en": "Child's Pose", "de": "Kindhaltung" },
+      "description": { "en": "Soles of the feet together, arms stretched forward, forehead on the ground.", "de": "Fußsohlen aneinander, Arme nach vorne gestreckt, Stirn auf dem Boden." },
+      "media": "media/childs-pose.webp"
+    }
+  },
+
+  "workouts": [
+    {
+      "id": "bauchfleischzerstoerung",
+      "name": { "en": "Pork Belly Destruction", "de": "Bauchfleischzerstörung" },
+      "category": "core",
+      "author": "Meister Jo",
+      "credit": "Sascha Huber",
+      "steps": [
+        { "exercise": "roll-knees-left", "duration": 30 },
+        { "exercise": "roll-knees-mid", "duration": 30 },
+        { "exercise": "roll-knees-right", "duration": 30 },
+        { "exercise": "hip-lift", "duration": 30 },
+        { "exercise": "heel-touch-air", "duration": 30 },
+        { "exercise": "boxing-crunches", "duration": 30 },
+        { "exercise": "scissors", "duration": 30 },
+        { "exercise": "plank-pulses-left", "duration": 30 },
+        { "exercise": "plank-hold-left", "duration": 30 },
+        { "exercise": "plank-pulses-right", "duration": 30 },
+        { "exercise": "plank-hold-right", "duration": 30 },
+        { "exercise": "crunch-glute-bridge", "duration": 30 },
+        { "exercise": "toe-touches", "duration": 30 },
+        { "exercise": "toe-reachers", "duration": 30 },
+        { "exercise": "toe-touch-sit", "duration": 30 },
+        { "exercise": "mountain-climbers-cross-fast", "duration": 30 },
+        { "exercise": "mountain-climbers-cross-slow", "duration": 30 },
+        { "exercise": "shin-claps", "duration": 30 },
+        { "exercise": "heel-touches-ground", "duration": 30 },
+        { "exercise": "hold-45", "duration": 30 },
+        { "exercise": "mountain-climbers-fast", "duration": 30 },
+        { "exercise": "mountain-climbers-slow", "duration": 30 },
+        { "exercise": "belly-breathing", "duration": 30 },
+        { "exercise": "childs-pose", "duration": 30 }
+      ]
+    }
+  ]
+}
