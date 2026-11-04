@@ -1,2 +1,5 @@
 # original photos (full size, contain GPS metadata) — run scripts/build_media.py to make media/
 pictures/
+
+# raw voice recordings; the web-ready tracks live in audio/<workout-id>/
+audio/*.m4a

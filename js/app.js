@@ -3,7 +3,8 @@ import { unlockAudio, sounds, loadClips, playClip } from './audio.js';
 
 // ---------- constants ----------
 const READY_SECONDS = 5;          // lead-in before the first exercise (not scaled)
-const BACK_RESTART_AFTER = 3;     // "back" restarts the current exercise if more than this many seconds in
+const TRACK_MAX_DRIFT = 0.4;      // s; the voice track is re-synced to the timer when it drifts further than this
+const BACK_RESTART_AFTER = 3;    // "back" restarts the current exercise if more than this many seconds in
 const MIN_STEP_SECONDS = 5;       // scaled intervals never drop below this
 const SCALE_MIN = 50, SCALE_MAX = 150, SCALE_STEP = 5;
 const FRAME_STROKE = 5;           // px, width of the countdown line around the picture
@@ -25,6 +26,7 @@ function loadSettings() {
     lang: (navigator.language || 'en').toLowerCase().startsWith('de') ? 'de' : 'en',
     scale: 100,
     voice: true,
+    tracks: {},      // workout id -> chosen track src, or '' for Silentio (missing = first track)
   };
   try { return { ...defaults, ...JSON.parse(localStorage.getItem(STORE_KEY) || '{}') }; }
   catch { return defaults; }
@@ -42,6 +44,17 @@ function fmt(sec) {
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 }
 const voiceClipCount = () => Object.values(VOICE).reduce((n, a) => n + a.length, 0);
+/** The voice track chosen for this workout, or null for Silentio. */
+function chosenTrack(w) {
+  const list = w.tracks || [];
+  const v = settings.tracks?.[w.id];
+  if (v === '') return null;
+  return list.find((tr) => tr.src === v) || list[0] || null;
+}
+function chooseTrack(w, track) {
+  settings.tracks = { ...settings.tracks, [w.id]: track ? track.src : '' };
+  saveSettings();
+}
 
 function buildPlan(workout, scalePct) {
   return workout.steps.map((s) => ({
@@ -171,10 +184,23 @@ function showOverview(id) {
           <output id="total">${fmt(planTotal(plan))} <small>(${settings.scale}%)</small></output>
         </label>
         <input id="scale" type="range" min="${SCALE_MIN}" max="${SCALE_MAX}" step="${SCALE_STEP}" value="${settings.scale}" aria-label="${esc(t('length'))}">
-        <label class="row toggle ${hasVoice ? '' : 'disabled'}">
-          <span>${esc(t('voice'))}${hasVoice ? '' : ` <small>(${esc(t('voiceNone'))})</small>`}</span>
-          <input id="voice" type="checkbox" ${settings.voice && hasVoice ? 'checked' : ''} ${hasVoice ? '' : 'disabled'}>
-        </label>
+        ${w.tracks?.length ? `
+        <div class="sound-choice" role="radiogroup">
+          <label class="row toggle">
+            <span>${esc(t('silent'))}</span>
+            <input type="radio" name="sound" value="">
+          </label>
+          ${w.tracks.map((tr) => `
+          <label class="row toggle">
+            <span>${esc(tx(tr.title))}${tr.by ? ` <small>· ${esc(tr.by)}</small>` : ''}</span>
+            <input type="radio" name="sound" value="${esc(tr.src)}">
+          </label>`).join('')}
+          <p class="track-note" id="trackNote" hidden>${esc(t('trackScale'))}</p>
+        </div>` : hasVoice ? `
+        <label class="row toggle">
+          <span>${esc(t('voice'))}</span>
+          <input id="voice" type="checkbox" ${settings.voice ? 'checked' : ''}>
+        </label>` : ''}
       </div>
 
       <ol class="steps">
@@ -185,14 +211,32 @@ function showOverview(id) {
     `;
     bindLangSwitch(render);
 
+    // Voice tracks are recorded against the original timing, so they only fit at 100%.
+    const updateTrack = () => {
+      const radios = [...app.querySelectorAll('input[name="sound"]')];
+      if (!radios.length) return;
+      const fits = settings.scale === 100;
+      const want = fits ? (chosenTrack(w)?.src ?? '') : '';
+      for (const r of radios) {
+        r.checked = r.value === want;
+        if (r.value) { r.disabled = !fits; r.closest('label').classList.toggle('disabled', !fits); }
+      }
+      app.querySelector('#trackNote').hidden = fits;
+    };
+    updateTrack();
+
     const scaleEl = app.querySelector('#scale');
     scaleEl.addEventListener('input', () => {
       settings.scale = Number(scaleEl.value); saveSettings();
       const p = buildPlan(w, settings.scale);
       app.querySelector('#total').innerHTML = `${fmt(planTotal(p))} <small>(${settings.scale}%)</small>`;
       app.querySelectorAll('.steps .dur').forEach((el, i) => { el.textContent = fmtStep(p[i].duration); });
+      updateTrack();
     });
-    app.querySelector('#voice').addEventListener('change', (e) => { settings.voice = e.target.checked; saveSettings(); });
+    app.querySelector('#voice')?.addEventListener('change', (e) => { settings.voice = e.target.checked; saveSettings(); });
+    app.querySelectorAll('input[name="sound"]').forEach((r) => r.addEventListener('change', () => {
+      chooseTrack(w, w.tracks.find((tr) => tr.src === r.value));
+    }));
     app.querySelector('#start').addEventListener('click', () => {
       unlockAudio();   // must happen inside the tap (iOS)
       startPlayer(w, buildPlan(w, settings.scale));
@@ -215,10 +259,22 @@ function startPlayer(workout, plan) {
     pausedAt: null,
     lastTick: null,
     fired: new Set(),          // voice moments already played
-    voiceOn: settings.voice && voiceClipCount() > 0,
+    // A workout with its own track offers "Silentio or track", so the random clips never play there.
+    voiceOn: settings.voice && voiceClipCount() > 0 && !workout.tracks?.length,
+    // Voice tracks only fit the original timing, so they are offered at 100% length only.
+    tracks: settings.scale === 100 ? (workout.tracks || []) : [],
+    track: null,               // the chosen entry of `tracks`, null = Silentio
+    audio: null,               // one <audio> element for all tracks, see useTrack() / syncTrack()
     raf: 0, interval: 0,
   };
   if (P.voiceOn) loadClips(Object.values(VOICE).flat());
+  if (P.tracks.length) {
+    // One element for the whole workout: once iOS has let it play (inside a tap), it keeps working after src changes.
+    P.audio = new Audio();
+    P.audio.preload = 'auto';
+    // A seek made before the file was loaded can get lost, so line up again as soon as it is.
+    P.audio.addEventListener('loadedmetadata', () => syncTrack(true));
+  }
 
   renderPlayerShell();
   window.scrollTo(0, 0);   // the player is taller than the screen now; always start at the top
@@ -228,6 +284,26 @@ function startPlayer(workout, plan) {
   const loop = () => { tick(); P && (P.raf = requestAnimationFrame(loop)); };
   P.raf = requestAnimationFrame(loop);
   P.interval = setInterval(tick, 250);   // keeps time moving when rAF is throttled
+  if (P.audio) useTrack(P.tracks.includes(chosenTrack(workout)) ? chosenTrack(workout) : null);  // inside the START tap (iOS)
+}
+
+/** Switch the voice track (null = Silentio). Call from a tap, so iOS allows play(). */
+function useTrack(track) {
+  P.track = track;
+  const a = P.audio;
+  if (track) {
+    const url = new URL(track.src, location.href).href;
+    if (a.src !== url) { a.src = url; a.load(); }
+    try {   // name on the phone's lock screen / media controls
+      if ('mediaSession' in navigator && window.MediaMetadata) {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: tx(track.title), artist: track.by || 'fit tomato', album: tx(P.workout.name),
+        });
+      }
+    } catch {}
+  }
+  syncTrack(true);
+  renderTrackMenu();
 }
 
 function stopPlayer() {
@@ -235,6 +311,7 @@ function stopPlayer() {
   cancelAnimationFrame(P.raf);
   clearInterval(P.interval);
   P.resize?.disconnect();
+  if (P.audio) { P.audio.pause(); P.audio.removeAttribute('src'); P.audio.load(); }
   P = null;
   releaseWake();
   document.body.classList.remove('playing');
@@ -256,6 +333,34 @@ function setSegment(phase, index) {
   if (P.pausedAt != null) P.pausedAt = P.segStart;
   P.lastTick = null;
   enterStep();
+  syncTrack(true);
+}
+
+/**
+ * The timer is the master clock; the voice track follows it.
+ * Track second 0 is the moment START is tapped (start of the get-ready countdown).
+ * force: seek even if the track is close enough (after skip/back/pause).
+ */
+function syncTrack(force = false) {
+  const a = P?.audio;
+  if (!a) return;
+  const pos = P.phase === 'ready' ? segElapsed() : READY_SECONDS + workoutElapsed();
+  const stopped = !P.track || P.pausedAt != null || P.phase === 'done';
+  if (stopped && !a.paused) a.pause();
+  if (!P.track || (stopped && !force)) return;   // a stopped track stands still; it is lined up again on resume
+  // Until the file's length is known, seeking does nothing; the 'loadedmetadata' handler lines it up then.
+  if (a.readyState < 1) { if (!stopped) playTrack(a); return; }
+  if (pos >= a.duration - 0.05) { if (!a.paused) a.pause(); return; }   // past the end: play() would restart from 0
+  // While a seek or download is in progress, currentTime is not reliable; only forced jumps go through then.
+  const settled = a.readyState >= 3 && !a.seeking;
+  if (force || (settled && Math.abs(a.currentTime - pos) > TRACK_MAX_DRIFT)) a.currentTime = pos;
+  if (!stopped) playTrack(a);
+}
+/** play() returns a promise; calling it again while one is still pending just piles up requests. */
+function playTrack(a) {
+  if (!a.paused || a._starting) return;
+  a._starting = true;
+  a.play().catch(() => {}).finally(() => { a._starting = false; });
 }
 
 function tick() {
@@ -283,6 +388,7 @@ function tick() {
     if (P.total > 20 && P.total - done <= 10) voiceMoment('last10');
   }
   renderPlayerFrame();
+  syncTrack();
 }
 
 function voiceMoment(name) {
@@ -305,7 +411,29 @@ function finish() {
 function togglePause() {
   if (P.pausedAt == null) P.pausedAt = now();
   else { P.segStart += now() - P.pausedAt; P.pausedAt = null; }
+  syncTrack(true);
   renderPlayerFrame();
+}
+/** Speaker button opens a list: Silentio + every track. The choice is remembered for next time. */
+function toggleTrackMenu(open) {
+  const menu = app.querySelector('#trackMenu');
+  if (menu) menu.hidden = !(open ?? menu.hidden);
+}
+function renderTrackMenu() {
+  const btn = app.querySelector('#sound');
+  if (!btn) return;
+  btn.textContent = P.track ? '🔊' : '🔇';
+  btn.setAttribute('aria-label', P.track ? tx(P.track.title) : t('silent'));
+  btn.title = btn.getAttribute('aria-label');
+  app.querySelectorAll('#trackMenu [data-src]').forEach((b) => {
+    b.setAttribute('aria-checked', String(b.dataset.src === (P.track?.src ?? '')));
+  });
+}
+function pickTrack(src) {
+  const track = P.tracks.find((tr) => tr.src === src) || null;
+  chooseTrack(P.workout, track);
+  useTrack(track);
+  toggleTrackMenu(false);
 }
 function skip() {
   if (P.phase === 'ready') setSegment('work', 0);
@@ -330,9 +458,17 @@ function renderPlayerShell() {
   app.innerHTML = `
     <section class="pscreen">
     <header class="ptop">
-      <button class="icon" id="exit" aria-label="${esc(t('ctlExit'))}">✕</button>
+      <span class="ptop-left">
+        <button class="icon" id="exit" aria-label="${esc(t('ctlExit'))}">✕</button>
+        ${P.audio ? `<button class="icon" id="sound" aria-haspopup="true"></button>` : ''}
+      </span>
       <span class="counter" id="counter"></span>
       <span class="total" id="total"></span>
+      ${P.audio ? `
+      <div class="track-menu" id="trackMenu" role="menu" hidden>
+        <button role="menuitemradio" data-src="">${esc(t('silent'))}</button>
+        ${P.tracks.map((tr) => `<button role="menuitemradio" data-src="${esc(tr.src)}">${esc(tx(tr.title))}${tr.by ? ` <small>· ${esc(tr.by)}</small>` : ''}</button>`).join('')}
+      </div>` : ''}
     </header>
     <div class="pmain">
       <p class="ready-label" id="readyLabel"></p>
@@ -365,6 +501,10 @@ function renderPlayerShell() {
   app.querySelector('#pause').addEventListener('click', togglePause);
   app.querySelector('#skip').addEventListener('click', skip);
   app.querySelector('#back').addEventListener('click', back);
+  app.querySelector('#sound')?.addEventListener('click', (e) => { e.stopPropagation(); toggleTrackMenu(); });
+  app.querySelectorAll('#trackMenu [data-src]').forEach((b) => b.addEventListener('click', (e) => {
+    e.stopPropagation(); pickTrack(b.dataset.src);
+  }));
 
   // The frame's size depends on the screen and on one vs. two pictures, so redraw the line whenever it changes.
   const stage = app.querySelector('#stage');
@@ -451,6 +591,11 @@ function releaseWake() {
 }
 document.addEventListener('visibilitychange', () => {
   if (P && document.visibilityState === 'visible') requestWake();  // the lock is dropped when the tab is hidden
+});
+
+// a tap anywhere outside the track list closes it
+document.addEventListener('click', (e) => {
+  if (P && !e.target.closest('#trackMenu, #sound')) toggleTrackMenu(false);
 });
 
 // keyboard shortcuts for desktop
