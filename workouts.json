@@ -37,7 +37,7 @@
     "scissors": {
       "name": { "en": "Scissors", "de": "Schere" },
       "description": { "en": "Stretch out on the ground, then touch your toes with your fingers while stretched.", "de": "Auf dem Boden ausstrecken, dann gestreckt mit den Fingern die Zehen berühren." },
-      "media": "media/scissors.webp"
+      "media": ["media/scissors-1.webp", "media/scissors-2.webp"]
     },
     "plank-pulses-left": {
       "name": { "en": "Plank Pulses Left", "de": "Plank-Pulse links" },
@@ -62,7 +62,7 @@
     "crunch-glute-bridge": {
       "name": { "en": "Crunch + Glute Bridge", "de": "Crunch + Glute Bridge" },
       "description": { "en": "Touch your heels with your fingers, then push your hips up and squeeze your glutes.", "de": "Mit den Fingern die Fersen berühren, dann Hüfte hoch und Po anspannen." },
-      "media": "media/crunch-glute-bridge.webp"
+      "media": ["media/heel-touch-air.webp", "media/crunch-glute-bridge-2.webp"]
     },
     "toe-touches": {
       "name": { "en": "Toe Touches", "de": "Zehen berühren" },
@@ -134,6 +134,7 @@
       "author": "Meister Jo",
       "credit": "Sascha Huber",
       "source": "https://www.youtube.com/watch?v=84EkBBwJc3A",
+      "readyMedia": "media/pork-belly-destruction-ready.webp",
       "steps": [
         { "exercise": "roll-knees-left", "duration": 30 },
         { "exercise": "roll-knees-mid", "duration": 30 },

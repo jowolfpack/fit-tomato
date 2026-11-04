@@ -6,7 +6,8 @@ const READY_SECONDS = 5;          // lead-in before the first exercise (not scal
 const BACK_RESTART_AFTER = 3;     // "back" restarts the current exercise if more than this many seconds in
 const MIN_STEP_SECONDS = 5;       // scaled intervals never drop below this
 const SCALE_MIN = 50, SCALE_MAX = 150, SCALE_STEP = 5;
-const RING_C = 2 * Math.PI * 46;  // circumference of the SVG ring (r = 46)
+const FRAME_STROKE = 5;           // px, width of the countdown line around the picture
+const FRAME_RADIUS = 22;          // px, corner radius of that line
 const ACCENTS = ['#e5483a', '#2f9e6b', '#3a7be5', '#d98a1c', '#9b51e0', '#d6457f'];
 const STORE_KEY = 'fittomato.settings.v1';
 
@@ -63,20 +64,45 @@ function bindLangSwitch(rerender) {
   }));
 }
 
-/** Show the exercise picture, or a placeholder with the description until a picture exists. */
-function setMedia(container, step) {
+/** `media` in workouts.json is one path or a list of paths (shown stacked, e.g. two phases of a movement). */
+const mediaList = (m) => (m == null ? [] : [].concat(m));
+const isVideo = (src) => /\.(webm|mp4)$/i.test(src);
+
+/** Show the picture(s), or a placeholder with `text` until a picture exists. */
+function setMedia(container, media, text) {
+  const list = mediaList(media);
+  const stage = container.closest('.stage');
   const placeholder = () => {
-    container.innerHTML = `<div class="placeholder"><span>${esc(tx(step.ex.description) || tx(step.ex.name))}</span></div>`;
+    stage?.classList.remove('pair');
+    container.innerHTML = `<div class="placeholder"><span>${esc(text)}</span></div>`;
   };
-  if (!step.ex.media) return placeholder();
-  const isVideo = /\.(webm|mp4)$/i.test(step.ex.media);
-  const el = document.createElement(isVideo ? 'video' : 'img');
-  if (isVideo) Object.assign(el, { autoplay: true, loop: true, muted: true, playsInline: true });
-  else el.alt = '';
-  // Only fall back if this element is still the one on screen (the user may have skipped on).
-  el.addEventListener('error', () => { if (el.isConnected) placeholder(); });
-  el.src = step.ex.media;
-  container.replaceChildren(el);
+  stage?.classList.toggle('pair', list.length > 1);
+  if (!list.length) return placeholder();
+  const els = list.map((src) => {
+    const el = document.createElement(isVideo(src) ? 'video' : 'img');
+    if (isVideo(src)) Object.assign(el, { autoplay: true, loop: true, muted: true, playsInline: true });
+    else el.alt = '';
+    // Only fall back if this element is still the one on screen (the user may have skipped on).
+    el.addEventListener('error', () => { if (el.isConnected) placeholder(); });
+    el.src = src;
+    return el;
+  });
+  container.replaceChildren(...els);
+}
+
+/** Rounded-rectangle path that starts at top-center and runs clockwise (so the countdown starts at 12 o'clock). */
+function framePath(w, h) {
+  const i = FRAME_STROKE / 2;
+  const x0 = i, y0 = i, x1 = w - i, y1 = h - i;
+  const r = Math.max(0, Math.min(FRAME_RADIUS, (x1 - x0) / 2, (y1 - y0) / 2));
+  const a = (x, y) => `A${r},${r} 0 0 1 ${x},${y}`;
+  return `M${w / 2},${y0} H${x1 - r} ${a(x1, y0 + r)} V${y1 - r} ${a(x1 - r, y1)} H${x0 + r} ${a(x0, y1 - r)} V${y0 + r} ${a(x0 + r, y0)} Z`;
+}
+function fitFrame(stage) {
+  const { width: w, height: h } = stage.getBoundingClientRect();
+  if (!w || !h) return;
+  stage.querySelector('.frame').setAttribute('viewBox', `0 0 ${w} ${h}`);
+  stage.querySelectorAll('.frame path').forEach((p) => p.setAttribute('d', framePath(w, h)));
 }
 
 // ---------- routing ----------
@@ -195,6 +221,7 @@ function startPlayer(workout, plan) {
   if (P.voiceOn) loadClips(Object.values(VOICE).flat());
 
   renderPlayerShell();
+  window.scrollTo(0, 0);   // the player is taller than the screen now; always start at the top
   enterStep();
   requestWake();
 
@@ -207,9 +234,11 @@ function stopPlayer() {
   if (!P) return;
   cancelAnimationFrame(P.raf);
   clearInterval(P.interval);
+  P.resize?.disconnect();
   P = null;
   releaseWake();
   document.body.classList.remove('playing');
+  window.scrollTo(0, 0);
 }
 
 const segDuration = () => (P.phase === 'ready' ? READY_SECONDS : P.plan[P.index].duration);
@@ -299,6 +328,7 @@ function renderPlayerShell() {
   document.body.classList.add('playing');
   app.className = 'view player';
   app.innerHTML = `
+    <section class="pscreen">
     <header class="ptop">
       <button class="icon" id="exit" aria-label="${esc(t('ctlExit'))}">✕</button>
       <span class="counter" id="counter"></span>
@@ -307,10 +337,10 @@ function renderPlayerShell() {
     <div class="pmain">
       <p class="ready-label" id="readyLabel"></p>
       <h1 class="ex-name" id="exName"></h1>
-      <div class="ring-wrap">
-        <svg class="ring" viewBox="0 0 100 100" aria-hidden="true">
-          <circle class="ring-track" cx="50" cy="50" r="46"/>
-          <circle class="ring-bar" id="ringBar" cx="50" cy="50" r="46" stroke-dasharray="${RING_C}" stroke-dashoffset="0"/>
+      <div class="stage" id="stage">
+        <svg class="frame" aria-hidden="true">
+          <path class="frame-track"/>
+          <path class="frame-bar" id="frameBar" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/>
         </svg>
         <div class="media" id="media"></div>
         <div class="secs" id="secs"></div>
@@ -322,11 +352,24 @@ function renderPlayerShell() {
       <button class="icon big" id="pause" aria-label="${esc(t('ctlPause'))}">⏸</button>
       <button class="icon" id="skip" aria-label="${esc(t('ctlSkip'))}">⏭</button>
     </nav>
+    <button class="more" id="more">${esc(t('howTo'))} ▾</button>
+    </section>
+    <section class="ex-info" id="exInfo">
+      <h2>${esc(t('howTo'))}</h2>
+      <h3 id="infoName"></h3>
+      <p id="infoDesc"></p>
+    </section>
   `;
+  app.querySelector('#more').addEventListener('click', () => app.querySelector('#exInfo').scrollIntoView({ behavior: 'smooth' }));
   app.querySelector('#exit').addEventListener('click', exitPlayer);
   app.querySelector('#pause').addEventListener('click', togglePause);
   app.querySelector('#skip').addEventListener('click', skip);
   app.querySelector('#back').addEventListener('click', back);
+
+  // The frame's size depends on the screen and on one vs. two pictures, so redraw the line whenever it changes.
+  const stage = app.querySelector('#stage');
+  P.resize = new ResizeObserver(() => fitFrame(stage));
+  P.resize.observe(stage);
 }
 
 /** Called whenever a new segment begins: swap name + picture, beep, flash. */
@@ -335,13 +378,22 @@ function enterStep() {
   const ready = P.phase === 'ready';
   app.querySelector('#readyLabel').textContent = ready ? `${t('getReady')} · ${t('first')}:` : '';
   app.querySelector('#exName').textContent = tx(step.ex.name);
-  setMedia(app.querySelector('#media'), step);
+  // description below the fold (scroll down or tap "How it's done")
+  const desc = tx(step.ex.description);
+  app.querySelector('#infoName').textContent = tx(step.ex.name);
+  app.querySelector('#infoDesc').textContent = desc;
+  app.querySelector('#exInfo').hidden = !desc;
+  app.querySelector('#more').hidden = !desc;
+  // "get ready" shows the workout's own picture if it has one, otherwise the first exercise
+  const readyMedia = ready && P.workout.readyMedia;
+  setMedia(app.querySelector('#media'), readyMedia || step.ex.media,
+    readyMedia ? '' : (tx(step.ex.description) || tx(step.ex.name)));
   app.style.setProperty('--ex-accent', ready ? 'var(--muted)' : ACCENTS[P.index % ACCENTS.length]);
   app.classList.toggle('is-ready', ready);
 
-  // preload the next picture
+  // preload the next picture(s)
   const next = P.plan[ready ? 0 : P.index + 1];
-  if (next?.ex.media && !/\.(webm|mp4)$/i.test(next.ex.media)) new Image().src = next.ex.media;
+  for (const src of mediaList(next?.ex.media)) if (!isVideo(src)) new Image().src = src;
 
   if (!ready) {
     sounds.change();
@@ -357,7 +409,7 @@ function renderPlayerFrame() {
   if (!P) return;
   const dur = segDuration();
   const left = Math.max(0, dur - segElapsed());
-  app.querySelector('#ringBar').setAttribute('stroke-dashoffset', String(RING_C * (1 - left / dur)));
+  app.querySelector('#frameBar').setAttribute('stroke-dashoffset', String(100 * (1 - left / dur)));
   app.querySelector('#secs').textContent = Math.ceil(left);
   app.querySelector('#total').textContent = `${fmt(P.total - workoutElapsed())} ${t('left')}`;
   app.querySelector('#counter').textContent = P.phase === 'ready' ? '' : `${P.index + 1} / ${P.plan.length}`;

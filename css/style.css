@@ -94,41 +94,66 @@ input[type="range"] { width: 100%; margin: 12px 0 16px; accent-color: var(--toma
 .btn-start:active { transform: scale(0.98); }
 
 /* ---------- player ---------- */
-body.playing { overflow: hidden; }
 .player {
   --ex-accent: var(--tomato);
-  height: 100dvh; max-width: 640px;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  max-width: 640px;
+  padding: 0 16px;
+}
+/* the actual player fills exactly one screen; the exercise description sits below it */
+.pscreen {
+  height: 100dvh;
+  padding: max(12px, env(safe-area-inset-top)) 0 max(8px, env(safe-area-inset-bottom));
   display: flex; flex-direction: column;
 }
+.more {
+  align-self: center; margin-top: 6px; padding: 4px 12px;
+  border: 0; background: none; color: var(--muted); font-size: 0.85rem;
+}
+.more[hidden], .ex-info[hidden] { display: none; }
+.ex-info {
+  padding: 24px 4px calc(48px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+.ex-info h2 { margin: 0 0 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.ex-info h3 { margin: 0 0 8px; font-size: 1.3rem; color: var(--ex-accent); transition: color 0.3s; }
+.ex-info p { margin: 0; font-size: 1.05rem; }
 .ptop { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ptop .total { font-weight: 600; color: var(--text); min-width: 4.5em; text-align: right; }
 .pmain { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; }
 .ready-label { margin: 0; color: var(--muted); min-height: 1.4em; text-align: center; }
 .ex-name {
-  margin: 4px 0 20px; text-align: center; font-size: clamp(1.5rem, 6.5vw, 2.4rem);
+  margin: 4px 0 14px; text-align: center; font-size: clamp(1.5rem, 6.5vw, 2.4rem);
   line-height: 1.15; letter-spacing: -0.02em; color: var(--ex-accent); transition: color 0.3s;
 }
-.ring-wrap {
+/* Picture(s) in a rounded frame; the countdown line runs around the frame.
+   Pictures are 3:2 landscape. The width is capped so that one picture, or two stacked,
+   still fit the screen height next to the name, the controls and the "How it's done" link (~370px). */
+.stage {
+  --pad: 12px;   /* gap between the countdown line and the picture */
+  --gap: 6px;    /* gap between two stacked pictures */
   position: relative;
-  width: min(84vw, 52dvh, 440px);
-  aspect-ratio: 1;
+  width: min(100%, 560px, calc((100dvh - 370px - 2 * var(--pad)) * 1.5 + 2 * var(--pad)));
+  padding: var(--pad);
+  margin-bottom: 26px;   /* room for the seconds pill that hangs off the bottom edge */
 }
-.ring { position: absolute; inset: 0; transform: rotate(-90deg); }
-.ring circle { fill: none; stroke-width: 4.5; }
-.ring-track { stroke: var(--line); }
-.ring-bar { stroke: var(--ex-accent); stroke-linecap: round; transition: stroke 0.3s; }
-.media {
-  position: absolute; inset: 8%; border-radius: 50%; overflow: hidden;
-  background: var(--surface); display: grid; place-items: center;
+.stage.pair {
+  width: min(100%, 560px, calc((100dvh - 370px - 2 * var(--pad) - var(--gap)) * 0.75 + 2 * var(--pad)));
 }
-.media img, .media video { width: 100%; height: 100%; object-fit: contain; background: #fff; }
+.frame { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.frame path { fill: none; stroke-width: 5; }
+.frame-track { stroke: var(--line); }
+.frame-bar { stroke: var(--ex-accent); stroke-linecap: round; transition: stroke 0.3s; }
+.media { display: flex; flex-direction: column; gap: var(--gap); }
+.media > * {
+  display: block; width: 100%; aspect-ratio: 3 / 2; object-fit: cover;
+  border-radius: 12px; background: var(--surface);
+}
 .placeholder {
-  width: 100%; height: 100%; display: grid; place-items: center; padding: 16%;
+  display: grid; place-items: center; padding: 8%;
   text-align: center; color: var(--muted); font-size: clamp(0.95rem, 3.6vw, 1.2rem);
 }
 .secs {
-  position: absolute; left: 50%; bottom: -4px; transform: translate(-50%, 0);
+  position: absolute; left: 50%; bottom: 0; transform: translate(-50%, 50%);
   min-width: 3.2em; padding: 2px 14px; border-radius: 999px;
   background: var(--ex-accent); color: #fff; text-align: center;
   font-size: clamp(1.8rem, 8vw, 2.6rem); font-weight: 750; font-variant-numeric: tabular-nums;
@@ -136,7 +161,7 @@ body.playing { overflow: hidden; }
 }
 .paused-label { visibility: hidden; margin: 20px 0 0; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .player.is-paused .paused-label { visibility: visible; animation: blink 1.4s infinite; }
-.player.is-paused .ring-bar { opacity: 0.45; }
+.player.is-paused .frame-bar { opacity: 0.45; }
 @keyframes blink { 50% { opacity: 0.3; } }
 
 .controls { display: flex; justify-content: center; align-items: center; gap: 28px; padding-top: 8px; }
